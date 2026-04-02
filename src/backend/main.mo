@@ -1,7 +1,4 @@
 import Map "mo:core/Map";
-import List "mo:core/List";
-import Order "mo:core/Order";
-import Array "mo:core/Array";
 import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
@@ -33,7 +30,6 @@ actor {
   };
 
   var nextAppointmentId = 1;
-  type AppointmentStore = Map.Map<AppointmentId, Appointment>;
   let appointments = Map.empty<AppointmentId, Appointment>();
 
   // Stable doctors list
@@ -44,7 +40,6 @@ actor {
     availabilityDays : [Text];
   };
 
-  type DoctorStore = Map.Map<DoctorId, Doctor>;
   let doctors = Map.empty<DoctorId, Doctor>();
 
   // Stable service list
@@ -54,7 +49,6 @@ actor {
     icon : Text;
   };
 
-  type ServiceStore = Map.Map<ServiceId, Service>;
   let services = Map.empty<ServiceId, Service>();
 
   // Stable health package list
@@ -64,7 +58,6 @@ actor {
     includedTests : [Text];
   };
 
-  type HealthPackageStore = Map.Map<PackageId, HealthPackage>;
   let healthPackages = Map.empty<PackageId, HealthPackage>();
 
   // Stable contact info
@@ -90,7 +83,7 @@ actor {
   };
 
   // Get all doctors - public access
-  public query ({ caller }) func getAllDoctors() : async [Doctor] {
+  public query func getAllDoctors() : async [Doctor] {
     doctors.values().toArray();
   };
 
@@ -105,7 +98,7 @@ actor {
   };
 
   // Get all services - public access
-  public query ({ caller }) func getAllServices() : async [Service] {
+  public query func getAllServices() : async [Service] {
     services.values().toArray();
   };
 
@@ -120,14 +113,12 @@ actor {
   };
 
   // Get all health packages - public access
-  public query ({ caller }) func getAllHealthPackages() : async [HealthPackage] {
+  public query func getAllHealthPackages() : async [HealthPackage] {
     healthPackages.values().toArray();
   };
 
-  // Public: Book appointment - accessible to everyone including guests
-  public shared ({ caller }) func bookAppointment(appointment : Appointment) : async AppointmentId {
-    // No authorization check - this is a public-facing feature
-    // Anyone (including anonymous/guest users) can book appointments
+  // Public: Book appointment
+  public shared func bookAppointment(appointment : Appointment) : async AppointmentId {
     let id = nextAppointmentId;
     let appointmentWithId : Appointment = {
       appointment with bookingTime = Time.now();
@@ -135,6 +126,19 @@ actor {
     appointments.add(id, appointmentWithId);
     nextAppointmentId += 1;
     id;
+  };
+
+  // Public: Get appointments by phone number
+  public type AppointmentWithId = {
+    id : AppointmentId;
+    appointment : Appointment;
+  };
+
+  public query func getAppointmentsByPhone(phone : Text) : async [AppointmentWithId] {
+    appointments.entries()
+      .filter(func((_, a) : (AppointmentId, Appointment)) : Bool { a.phone == phone })
+      .map(func((id, a) : (AppointmentId, Appointment)) : AppointmentWithId { { id = id; appointment = a } })
+      .toArray();
   };
 
   // Admin only: Get all appointments
@@ -154,7 +158,7 @@ actor {
   };
 
   // Get contact info - public access
-  public query ({ caller }) func getContactInfo() : async ContactInfo {
+  public query func getContactInfo() : async ContactInfo {
     contactInfo;
   };
 

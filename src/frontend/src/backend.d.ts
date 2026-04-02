@@ -41,6 +41,10 @@ export interface Appointment {
     patientName: string;
     phone: string;
 }
+export interface AppointmentWithId {
+    id: bigint;
+    appointment: Appointment;
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -60,6 +64,7 @@ export interface backendInterface {
     getAllDoctors(): Promise<Array<Doctor>>;
     getAllHealthPackages(): Promise<Array<HealthPackage>>;
     getAllServices(): Promise<Array<Service>>;
+    getAppointmentsByPhone(phone: string): Promise<Array<AppointmentWithId>>;
     getCallerUserRole(): Promise<UserRole>;
     getContactInfo(): Promise<ContactInfo>;
     isCallerAdmin(): Promise<boolean>;

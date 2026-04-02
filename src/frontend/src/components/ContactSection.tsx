@@ -3,9 +3,9 @@ import { motion } from "motion/react";
 import { useGetContactInfo } from "../hooks/useQueries";
 
 const fallbackContact = {
-  address: "Near Khanakul Bus Stand, Khanakul, Hooghly, West Bengal - 712409",
-  phone: "+91 94320 XXXXX",
-  email: "info@khanakuldiagnostic.com",
+  address: "Ramnagar, Khanakul, Hooghly, West Bengal - 712406",
+  phone: "9732411070 / 6294215788",
+  email: "khanakuldiagnosticcentre25@gmail.com",
 };
 
 export default function ContactSection() {
@@ -57,7 +57,8 @@ export default function ContactSection() {
               </div>
               <div>
                 <h4 className="font-semibold text-kdc-navy mb-1">Phone</h4>
-                <p className="text-muted-foreground text-sm">{contact.phone}</p>
+                <p className="text-muted-foreground text-sm">9732411070</p>
+                <p className="text-muted-foreground text-sm">6294215788</p>
               </div>
             </div>
             <div className="flex gap-4 items-start">
@@ -66,7 +67,12 @@ export default function ContactSection() {
               </div>
               <div>
                 <h4 className="font-semibold text-kdc-navy mb-1">Email</h4>
-                <p className="text-muted-foreground text-sm">{contact.email}</p>
+                <a
+                  href="mailto:khanakuldiagnosticcentre25@gmail.com"
+                  className="text-muted-foreground text-sm hover:text-kdc-blue transition-colors"
+                >
+                  khanakuldiagnosticcentre25@gmail.com
+                </a>
               </div>
             </div>
             <div className="flex gap-4 items-start">
@@ -101,10 +107,10 @@ export default function ContactSection() {
                 Khanakul Diagnostic Centre
               </p>
               <p className="text-muted-foreground text-sm mt-1">
-                Khanakul, Hooghly, West Bengal
+                Ramnagar, Khanakul, Hooghly - 712406
               </p>
               <a
-                href="https://maps.google.com/?q=Khanakul+Hooghly+West+Bengal"
+                href="https://maps.google.com/?q=Ramnagar+Khanakul+Hooghly+West+Bengal+712406"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 inline-block text-kdc-blue text-sm font-semibold hover:text-kdc-teal transition-colors"

@@ -46,15 +46,20 @@ export default function Footer() {
             <div className="space-y-2 text-sm text-white/70">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-kdc-teal flex-shrink-0" />
-                Near Khanakul Bus Stand, Hooghly, WB
+                Ramnagar, Khanakul, Hooghly - 712406
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-kdc-teal flex-shrink-0" />
-                +91 94320 XXXXX
+                9732411070 / 6294215788
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-kdc-teal flex-shrink-0" />
-                info@khanakuldiagnostic.com
+                <a
+                  href="mailto:khanakuldiagnosticcentre25@gmail.com"
+                  className="hover:text-kdc-teal transition-colors"
+                >
+                  khanakuldiagnosticcentre25@gmail.com
+                </a>
               </div>
             </div>
           </div>
@@ -114,7 +119,7 @@ export default function Footer() {
             </div>
             <div className="text-white/60 text-sm">
               <p className="font-semibold text-white mb-1">Emergency Contact</p>
-              <p>24/7 helpline: +91 98765 XXXXX</p>
+              <p>9732411070 / 6294215788</p>
             </div>
           </div>
         </div>

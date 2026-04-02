@@ -4,37 +4,87 @@ import { Calendar, Stethoscope } from "lucide-react";
 import { motion } from "motion/react";
 import { useGetDoctors } from "../hooks/useQueries";
 
-const doctorImages = [
+const doctorImages: Record<string, string> = {
+  "Dr. Krishnadu Banerjee": "/assets/generated/dr-krishnadu-banerjee.jpg",
+};
+
+const genericImages = [
   "/assets/generated/doctor-1.dim_400x400.jpg",
   "/assets/generated/doctor-2.dim_400x400.jpg",
   "/assets/generated/doctor-3.dim_400x400.jpg",
 ];
 
-const fallbackDoctors = [
+type Doctor = {
+  name: string;
+  specialty: string;
+  qualification: string;
+  availabilityDays: string[];
+  availabilityTime?: string;
+  note?: string;
+};
+
+const fallbackDoctors: Doctor[] = [
   {
-    name: "Dr. Sudipta Chakraborty",
+    name: "Dr. Golam Murshid",
+    specialty: "Orthopaedic Surgeon",
+    qualification: "MBBS (Cal), MS Ortho",
+    availabilityDays: ["Mon", "Fri"],
+  },
+  {
+    name: "Dr. Subhajit Das",
+    specialty: "General Medicine",
+    qualification: "MBBS, MD",
+    availabilityDays: ["Thu"],
+    availabilityTime: "11:00 AM",
+  },
+  {
+    name: "Dr. Rajarshee Biswas",
     specialty: "Pathologist",
     qualification: "MBBS, MD (Pathology)",
-    availabilityDays: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    availabilityDays: [],
   },
   {
-    name: "Dr. Priya Mondal",
-    specialty: "Radiologist",
-    qualification: "MBBS, MD (Radiology)",
-    availabilityDays: ["Mon", "Wed", "Fri", "Sat"],
+    name: "Dr. Mirza Md. Arefin",
+    specialty: "General Medicine",
+    qualification: "MBBS",
+    availabilityDays: ["Sun"],
+    availabilityTime: "11:30 AM",
   },
   {
-    name: "Dr. Rajesh Kumar Sen",
-    specialty: "General Physician",
-    qualification: "MBBS, PGDM",
-    availabilityDays: ["Tue", "Thu", "Sat"],
+    name: "Dr. Krishnadu Banerjee",
+    specialty: "Child Specialist",
+    qualification: "MBBS, MD",
+    availabilityDays: ["Sun"],
+    availabilityTime: "12:30 PM",
+  },
+  {
+    name: "Dr. Anirban Mukherjee",
+    specialty: "Dermatology, Venereology & Leprosy",
+    qualification: "MBBS (Hons.), MD (Dermatology, Venereology & Leprosy)",
+    availabilityDays: ["Thu"],
+    availabilityTime: "11:00 AM",
+    note: "Gold Medalist",
+  },
+  {
+    name: "Dr. Ananya Malkhandi",
+    specialty: "Obstetrics & Gynecology",
+    qualification: "MBBS (NRSMCH), M.S (NBMCH), Regd. No. 84462 (WBMC)",
+    availabilityDays: ["Wed"],
+    availabilityTime: "11:30 AM",
   },
 ];
 
 export default function DoctorsSection() {
   const { data: doctors } = useGetDoctors();
-  const displayDoctors =
-    doctors && doctors.length > 0 ? doctors : fallbackDoctors;
+  const rawDoctors = doctors && doctors.length > 0 ? doctors : fallbackDoctors;
+  const displayDoctors: Doctor[] = rawDoctors.map((d) => ({
+    name: d.name,
+    specialty: d.specialty,
+    qualification: d.qualification,
+    availabilityDays: d.availabilityDays,
+    availabilityTime: (d as Doctor).availabilityTime,
+    note: (d as Doctor).note,
+  }));
 
   return (
     <section id="doctors" className="py-20 bg-kdc-light">
@@ -69,7 +119,10 @@ export default function DoctorsSection() {
               <div className="bg-gradient-to-b from-kdc-blue/20 to-transparent p-8 pb-0">
                 <Avatar className="w-28 h-28 mx-auto border-4 border-white shadow-lg">
                   <AvatarImage
-                    src={doctorImages[idx % doctorImages.length]}
+                    src={
+                      doctorImages[doctor.name] ??
+                      genericImages[idx % genericImages.length]
+                    }
                     alt={doctor.name}
                   />
                   <AvatarFallback className="bg-kdc-blue text-white text-2xl font-bold">
@@ -85,6 +138,11 @@ export default function DoctorsSection() {
                 <h3 className="text-xl font-bold text-kdc-navy mb-1">
                   {doctor.name}
                 </h3>
+                {doctor.note && (
+                  <p className="text-amber-600 text-xs font-bold uppercase tracking-wide mb-1">
+                    🏅 {doctor.note}
+                  </p>
+                )}
                 <div className="flex items-center justify-center gap-1 text-kdc-teal font-semibold text-sm mb-1">
                   <Stethoscope className="w-4 h-4" />
                   {doctor.specialty}
@@ -92,20 +150,27 @@ export default function DoctorsSection() {
                 <p className="text-muted-foreground text-sm mb-4">
                   {doctor.qualification}
                 </p>
-                <div className="flex flex-wrap gap-1 justify-center mb-5">
-                  {doctor.availabilityDays.map((day) => (
-                    <span
-                      key={day}
-                      className="text-xs bg-kdc-blue/10 text-kdc-blue px-2 py-0.5 rounded-full font-medium"
-                    >
-                      {day}
-                    </span>
-                  ))}
-                </div>
+                {doctor.availabilityDays.length > 0 && (
+                  <div className="flex flex-wrap gap-1 justify-center mb-2">
+                    {doctor.availabilityDays.map((day) => (
+                      <span
+                        key={day}
+                        className="text-xs bg-kdc-blue/10 text-kdc-blue px-2 py-0.5 rounded-full font-medium"
+                      >
+                        {day}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {doctor.availabilityTime && (
+                  <p className="text-xs text-kdc-teal font-medium mb-3">
+                    Time: {doctor.availabilityTime}
+                  </p>
+                )}
                 <Button
                   asChild
                   size="sm"
-                  className="bg-kdc-blue hover:bg-kdc-navy text-white"
+                  className="bg-kdc-blue hover:bg-kdc-navy text-white mt-2"
                   data-ocid={`doctors.primary_button.${idx + 1}`}
                 >
                   <a href="#appointment">

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { Appointment } from "../backend.d";
+import type { Appointment, AppointmentWithId } from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useGetServices() {
@@ -57,5 +57,20 @@ export function useBookAppointment() {
       if (!actor) throw new Error("Actor not available");
       return actor.bookAppointment(appointment);
     },
+  });
+}
+
+export function useGetAppointmentsByPhone(phone: string) {
+  const { actor, isFetching } = useActor();
+  return useQuery<AppointmentWithId[]>({
+    queryKey: ["appointmentsByPhone", phone],
+    queryFn: async () => {
+      if (!actor || !phone) return [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (actor as any).getAppointmentsByPhone(phone) as Promise<
+        AppointmentWithId[]
+      >;
+    },
+    enabled: !!actor && !isFetching && phone.length >= 10,
   });
 }

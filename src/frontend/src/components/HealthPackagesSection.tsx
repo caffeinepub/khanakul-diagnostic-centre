@@ -11,7 +11,7 @@ const fallbackPackages = [
   },
   {
     name: "Full Body Checkup",
-    price: BigInt(1499),
+    price: BigInt(1599),
     includedTests: [
       "CBC",
       "LFT",
