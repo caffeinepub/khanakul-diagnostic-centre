@@ -15,7 +15,9 @@ const quickLinks = [
   { label: "Doctors", href: "#doctors" },
   { label: "Health Packages", href: "#packages" },
   { label: "Book Appointment", href: "#appointment" },
+  { label: "Gallery", href: "#gallery" },
   { label: "Contact", href: "#contact" },
+  { label: "Support", href: "#support" },
 ];
 
 export default function Footer() {

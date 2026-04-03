@@ -3,10 +3,12 @@ import BookAppointmentSection from "./components/BookAppointmentSection";
 import ContactSection from "./components/ContactSection";
 import DoctorsSection from "./components/DoctorsSection";
 import Footer from "./components/Footer";
+import GallerySection from "./components/GallerySection";
 import HealthPackagesSection from "./components/HealthPackagesSection";
 import HeroSection from "./components/HeroSection";
 import Navbar from "./components/Navbar";
 import ServicesSection from "./components/ServicesSection";
+import SupportSection from "./components/SupportSection";
 import WhyChooseUsSection from "./components/WhyChooseUsSection";
 
 export default function App() {
@@ -21,7 +23,9 @@ export default function App() {
         <DoctorsSection />
         <WhyChooseUsSection />
         <BookAppointmentSection />
+        <GallerySection />
         <ContactSection />
+        <SupportSection />
       </main>
       <Footer />
     </div>

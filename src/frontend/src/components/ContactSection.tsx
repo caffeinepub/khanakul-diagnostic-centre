@@ -1,5 +1,11 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { motion } from "motion/react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useGetContactInfo } from "../hooks/useQueries";
 
 const fallbackContact = {
@@ -11,6 +17,44 @@ const fallbackContact = {
 export default function ContactSection() {
   const { data: contactInfo } = useGetContactInfo();
   const contact = contactInfo ?? fallbackContact;
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<{
+    name?: string;
+    phone?: string;
+    message?: string;
+  }>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!name.trim()) newErrors.name = "Full name is required.";
+    if (!phone.trim()) newErrors.phone = "Phone number is required.";
+    else if (!/^[6-9]\d{9}$/.test(phone.trim()))
+      newErrors.phone = "Enter a valid 10-digit phone number.";
+    if (!message.trim()) newErrors.message = "Message is required.";
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors = validate();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    setSubmitting(true);
+    // Simulate async submission
+    await new Promise((r) => setTimeout(r, 600));
+    setSubmitting(false);
+    setName("");
+    setPhone("");
+    setMessage("");
+    toast.success("Thank you! We'll get back to you shortly.");
+  };
 
   return (
     <section id="contact" className="py-20 bg-white">
@@ -93,30 +137,122 @@ export default function ContactSection() {
             </div>
           </motion.div>
 
-          {/* Map Placeholder */}
+          {/* Enquiry Form */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="rounded-2xl overflow-hidden h-80 lg:h-auto bg-kdc-light border border-border flex items-center justify-center"
+            className="rounded-2xl bg-kdc-light border border-border p-6 md:p-8"
           >
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-kdc-blue mx-auto mb-3" />
-              <p className="text-kdc-navy font-semibold">
-                Khanakul Diagnostic Centre
-              </p>
-              <p className="text-muted-foreground text-sm mt-1">
-                Ramnagar, Khanakul, Hooghly - 712406
-              </p>
+            <h3 className="text-xl font-bold text-kdc-navy mb-1">
+              Send an Enquiry
+            </h3>
+            <p className="text-muted-foreground text-sm mb-6">
+              Fill in the form and we'll get back to you.
+            </p>
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+              noValidate
+              data-ocid="contact.modal"
+            >
+              <div>
+                <Label
+                  htmlFor="contact-name"
+                  className="text-kdc-navy font-medium"
+                >
+                  Full Name
+                </Label>
+                <Input
+                  id="contact-name"
+                  type="text"
+                  placeholder="e.g. Amit Kumar"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1"
+                  data-ocid="contact.input"
+                />
+                {errors.name && (
+                  <p
+                    className="text-destructive text-xs mt-1"
+                    data-ocid="contact.error_state"
+                  >
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="contact-phone"
+                  className="text-kdc-navy font-medium"
+                >
+                  Phone Number
+                </Label>
+                <Input
+                  id="contact-phone"
+                  type="tel"
+                  placeholder="e.g. 9876543210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1"
+                  data-ocid="contact.input"
+                />
+                {errors.phone && (
+                  <p
+                    className="text-destructive text-xs mt-1"
+                    data-ocid="contact.error_state"
+                  >
+                    {errors.phone}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="contact-message"
+                  className="text-kdc-navy font-medium"
+                >
+                  Message
+                </Label>
+                <Textarea
+                  id="contact-message"
+                  placeholder="How can we help you?"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="mt-1 min-h-[100px] resize-none"
+                  data-ocid="contact.textarea"
+                />
+                {errors.message && (
+                  <p
+                    className="text-destructive text-xs mt-1"
+                    data-ocid="contact.error_state"
+                  >
+                    {errors.message}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-kdc-blue hover:bg-kdc-navy text-white"
+                data-ocid="contact.submit_button"
+              >
+                {submitting ? "Sending..." : "Send Enquiry"}
+              </Button>
+            </form>
+
+            <div className="mt-5 pt-4 border-t border-border text-center">
               <a
                 href="https://maps.google.com/?q=Ramnagar+Khanakul+Hooghly+West+Bengal+712406"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-block text-kdc-blue text-sm font-semibold hover:text-kdc-teal transition-colors"
+                className="text-kdc-blue text-sm font-semibold hover:text-kdc-teal transition-colors"
                 data-ocid="contact.link"
               >
-                Open in Google Maps →
+                View on Google Maps →
               </a>
             </div>
           </motion.div>

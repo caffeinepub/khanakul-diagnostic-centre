@@ -11,6 +11,7 @@ const navLinks = [
   { label: "Health Packages", href: "#packages" },
   { label: "Gallery", href: "#gallery" },
   { label: "Contact", href: "#contact" },
+  { label: "Support", href: "#support" },
 ];
 
 export default function Navbar() {
@@ -50,7 +51,7 @@ export default function Navbar() {
         </a>
 
         {/* Desktop Nav */}
-        <nav className="hidden lg:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-5">
           {navLinks.map((link) => (
             <a
               key={link.href}
