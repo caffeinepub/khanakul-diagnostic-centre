@@ -840,27 +840,26 @@ function AdminAppointmentsTab() {
   const [filterQuery, setFilterQuery] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [submittedPassword, setSubmittedPassword] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
   const { isPending: isDeleting } = useDeleteAppointment();
 
   const {
     data: appointments,
     isFetching,
     isError,
+    isSuccess,
   } = useGetAllAppointmentsByPassword(
     submittedPassword,
-    unlocked && submittedPassword.length > 0,
+    submittedPassword.length > 0,
   );
 
-  // Handle wrong password: use useEffect to avoid setting state during render
+  // Show error toast when password is wrong
   useEffect(() => {
-    if (isError && unlocked) {
-      setUnlocked(false);
+    if (isError && submittedPassword.length > 0) {
       setSubmittedPassword("");
       setAdminPassword("");
       toast.error("Incorrect password. Please try again.");
     }
-  }, [isError, unlocked]);
+  }, [isError, submittedPassword]);
 
   const filtered = (appointments ?? []).filter(
     (a: AppointmentWithId) =>
@@ -870,7 +869,7 @@ function AdminAppointmentsTab() {
       a.appointment.phone.includes(filterQuery),
   );
 
-  if (!unlocked) {
+  if (!isSuccess) {
     return (
       <div
         className="flex items-center justify-center py-8"
@@ -902,7 +901,6 @@ function AdminAppointmentsTab() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && adminPassword.length > 0) {
                   setSubmittedPassword(adminPassword);
-                  setUnlocked(true);
                 }
               }}
               className="border-kdc-blue/30 focus:border-kdc-blue"
@@ -914,7 +912,6 @@ function AdminAppointmentsTab() {
             disabled={adminPassword.length === 0 || isFetching}
             onClick={() => {
               setSubmittedPassword(adminPassword);
-              setUnlocked(true);
             }}
             data-ocid="admin.primary_button"
           >
@@ -961,7 +958,6 @@ function AdminAppointmentsTab() {
             variant="outline"
             className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
             onClick={() => {
-              setUnlocked(false);
               setSubmittedPassword("");
               setAdminPassword("");
               setFilterQuery("");
