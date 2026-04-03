@@ -1,30 +1,24 @@
 # Khanakul Diagnostic Centre
 
 ## Current State
-New project with empty backend and no frontend.
+BookAppointmentSection has 3 tabs: Book Appointment, Test Prices, My Appointments. Backend has getAllAppointments (admin-only) and isCallerAdmin methods.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Full website for Khanakul Diagnostic Centre
-- Hero section with name, tagline, and CTAs
-- Services section: Pathological Tests, Radiology, Health Packages, Sample Collection
-- Doctors section with doctor profiles
-- Why Choose Us section with feature highlights
-- Health Packages section with pricing
-- Appointment booking form (name, phone, service, date, message)
-- Contact section with address, phone, email
-- Navigation with all sections
-- Footer with quick links and social icons
+- 4th tab "Admin View" in BookAppointmentSection
+- useGetAllAppointments and useIsCallerAdmin hooks in useQueries.ts
+- AdminAppointmentsTab: checks isCallerAdmin, shows all appointments with search/filter, delete button per entry
 
 ### Modify
-- N/A
+- BookAppointmentSection.tsx: add 4th tab, change grid-cols-3 to grid-cols-4
+- useQueries.ts: add new hooks
 
 ### Remove
-- N/A
+- Nothing
 
 ## Implementation Plan
-1. Backend: Store appointment bookings, doctor profiles, services, health packages
-2. Frontend: Full multi-section website matching the design preview
-3. Appointment form that submits to backend
-4. Admin view to see submitted appointments (protected)
+1. Add useGetAllAppointments, useIsCallerAdmin, useDeleteAppointment hooks to useQueries.ts
+2. Create AdminAppointmentsTab in BookAppointmentSection.tsx
+3. Add 4th tab trigger and content, update grid-cols-4
+4. Validate

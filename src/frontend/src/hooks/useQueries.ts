@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Appointment, AppointmentWithId } from "../backend.d";
 import { useActor } from "./useActor";
 
@@ -72,5 +72,43 @@ export function useGetAppointmentsByPhone(phone: string) {
       >;
     },
     enabled: !!actor && !isFetching && phone.length >= 10,
+  });
+}
+
+export function useIsCallerAdmin() {
+  const { actor, isFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["isCallerAdmin"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAllAppointments(enabled: boolean) {
+  const { actor, isFetching } = useActor();
+  return useQuery<Appointment[]>({
+    queryKey: ["allAppointments"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllAppointments();
+    },
+    enabled: !!actor && !isFetching && enabled,
+  });
+}
+
+export function useDeleteAppointment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (appointmentId: bigint) => {
+      if (!actor) throw new Error("Actor not available");
+      return actor.deleteAppointment(appointmentId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allAppointments"] });
+    },
   });
 }

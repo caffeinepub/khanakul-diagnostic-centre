@@ -17,19 +17,24 @@ import {
   ClipboardList,
   FlaskConical,
   Loader2,
+  Lock,
   MessageCircle,
   Phone,
   Search,
+  Shield,
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { AppointmentWithId } from "../backend.d";
+import type { Appointment, AppointmentWithId } from "../backend.d";
 import {
   useBookAppointment,
+  useDeleteAppointment,
+  useGetAllAppointments,
   useGetAppointmentsByPhone,
   useGetServices,
+  useIsCallerAdmin,
 } from "../hooks/useQueries";
 
 const WHATSAPP_NUMBERS = [
@@ -65,43 +70,162 @@ const serviceOptions = [
 // Single test catalogue with prices
 const TEST_CATALOGUE = [
   // Blood Tests
-  { name: "Complete Blood Count (CBC)", category: "Blood Test", price: 150 },
+  { name: "Complete Blood Count (CBC)", category: "Blood Test", price: 300 },
+  { name: "CBC with ESR", category: "Blood Test", price: 300 },
   { name: "Blood Sugar Fasting (BSF)", category: "Blood Test", price: 60 },
   { name: "Blood Sugar PP", category: "Blood Test", price: 60 },
   { name: "Random Blood Sugar", category: "Blood Test", price: 60 },
   { name: "HbA1c (Glycated Haemoglobin)", category: "Blood Test", price: 350 },
   { name: "Haemoglobin (Hb)", category: "Blood Test", price: 50 },
-  { name: "ESR", category: "Blood Test", price: 60 },
-  { name: "Blood Group & Rh Factor", category: "Blood Test", price: 80 },
+  { name: "Haemoglobin", category: "Blood Test", price: 50 },
+  {
+    name: "ESR (Erythrocyte Sedimentation Rate)",
+    category: "Blood Test",
+    price: 50,
+  },
+  { name: "Blood Group & Rh Factor", category: "Blood Test", price: 50 },
+  {
+    name: "Bleeding Time & Clotting Time (BT & CT)",
+    category: "Blood Test",
+    price: 100,
+  },
+  {
+    name: "Absolute Eosinophil Count (AEC)",
+    category: "Blood Test",
+    price: 100,
+  },
+  { name: "APTT / PTT", category: "Blood Test", price: 500 },
+  { name: "DC (Differential Count)", category: "Blood Test", price: 50 },
+  { name: "DC with MP", category: "Blood Test", price: 170 },
+  { name: "Fibrinogen", category: "Blood Test", price: 800 },
+  {
+    name: "FDP (Fibrin Degradation Products)",
+    category: "Blood Test",
+    price: 1000,
+  },
+  { name: "G6PD Quantitative", category: "Blood Test", price: 800 },
+  { name: "GTT (Glucose Tolerance Test)", category: "Blood Test", price: 150 },
+  { name: "HPLC", category: "Blood Test", price: 800 },
+  { name: "Lactate", category: "Blood Test", price: 1000 },
   // Liver & Kidney
-  { name: "Liver Function Test (LFT)", category: "Liver & Kidney", price: 400 },
+  { name: "Liver Function Test (LFT)", category: "Liver & Kidney", price: 500 },
   {
     name: "Kidney Function Test (KFT)",
     category: "Liver & Kidney",
-    price: 400,
+    price: 1500,
   },
-  { name: "Serum Creatinine", category: "Liver & Kidney", price: 120 },
+  { name: "Serum Creatinine", category: "Liver & Kidney", price: 150 },
   { name: "Serum Uric Acid", category: "Liver & Kidney", price: 120 },
   { name: "Blood Urea", category: "Liver & Kidney", price: 100 },
+  { name: "BUN (Blood Urea Nitrogen)", category: "Liver & Kidney", price: 200 },
+  { name: "BUN Creatinine Ratio", category: "Liver & Kidney", price: 300 },
   { name: "SGOT (AST)", category: "Liver & Kidney", price: 120 },
   { name: "SGPT (ALT)", category: "Liver & Kidney", price: 120 },
-  { name: "Bilirubin Total & Direct", category: "Liver & Kidney", price: 150 },
+  {
+    name: "Bilirubin (Total + Direct)",
+    category: "Liver & Kidney",
+    price: 150,
+  },
+  { name: "Albumin", category: "Liver & Kidney", price: 100 },
+  {
+    name: "ALP (Alkaline Phosphatase)",
+    category: "Liver & Kidney",
+    price: 150,
+  },
+  { name: "ADA (Adenosine Deaminase)", category: "Liver & Kidney", price: 700 },
+  { name: "Amylase", category: "Liver & Kidney", price: 450 },
+  { name: "Acid Phosphatase", category: "Liver & Kidney", price: 350 },
+  { name: "Bile Acid", category: "Liver & Kidney", price: 1500 },
+  {
+    name: "ACR (Albumin Creatinine Ratio) Urine",
+    category: "Liver & Kidney",
+    price: 500,
+  },
+  { name: "Bicarbonate (HCO3)", category: "Liver & Kidney", price: 600 },
+  { name: "Chloride", category: "Liver & Kidney", price: 200 },
+  {
+    name: "Electrolytes (Na+, K+, Cl-, HCO3)",
+    category: "Liver & Kidney",
+    price: 300,
+  },
+  { name: "eGFR (Estimated GFR)", category: "Liver & Kidney", price: 600 },
+  { name: "GGT (Gamma GT)", category: "Liver & Kidney", price: 200 },
+  { name: "Globulin", category: "Liver & Kidney", price: 250 },
+  { name: "Lipase", category: "Liver & Kidney", price: 450 },
+  { name: "LFT (Liver Function Test)", category: "Liver & Kidney", price: 500 },
+  {
+    name: "KFT (Kidney Function Test)",
+    category: "Liver & Kidney",
+    price: 1500,
+  },
   // Lipid & Heart
-  { name: "Lipid Profile", category: "Lipid & Heart", price: 350 },
-  { name: "Total Cholesterol", category: "Lipid & Heart", price: 120 },
+  { name: "Lipid Profile", category: "Lipid & Heart", price: 500 },
+  { name: "Lipid Profile (LP)", category: "Lipid & Heart", price: 500 },
+  { name: "Cholesterol (Total)", category: "Lipid & Heart", price: 150 },
   { name: "Triglycerides", category: "Lipid & Heart", price: 120 },
-  { name: "HDL Cholesterol", category: "Lipid & Heart", price: 120 },
-  { name: "LDL Cholesterol", category: "Lipid & Heart", price: 120 },
+  { name: "HDL Cholesterol", category: "Lipid & Heart", price: 150 },
+  { name: "LDL Cholesterol", category: "Lipid & Heart", price: 150 },
+  {
+    name: "CPK (Creatine Phosphokinase)",
+    category: "Lipid & Heart",
+    price: 350,
+  },
+  { name: "CPK MB", category: "Lipid & Heart", price: 450 },
   { name: "ECG", category: "Lipid & Heart", price: 200 },
-  // Thyroid
+  { name: "Lipoprotein", category: "Lipid & Heart", price: 600 },
+  // Thyroid & Hormones
   {
     name: "TSH (Thyroid Stimulating Hormone)",
-    category: "Thyroid",
+    category: "Thyroid & Hormones",
     price: 280,
   },
-  { name: "T3 (Triiodothyronine)", category: "Thyroid", price: 200 },
-  { name: "T4 (Thyroxine)", category: "Thyroid", price: 200 },
-  { name: "Thyroid Profile (T3, T4, TSH)", category: "Thyroid", price: 499 },
+  { name: "T3 (Triiodothyronine)", category: "Thyroid & Hormones", price: 200 },
+  { name: "T4 (Thyroxine)", category: "Thyroid & Hormones", price: 200 },
+  {
+    name: "Thyroid Profile (T3, T4, TSH)",
+    category: "Thyroid & Hormones",
+    price: 499,
+  },
+  {
+    name: "Anti-TPO (Anti Thyroid Peroxidase)",
+    category: "Thyroid & Hormones",
+    price: 1300,
+  },
+  {
+    name: "Anti-TG (Anti Thyroglobulin)",
+    category: "Thyroid & Hormones",
+    price: 1200,
+  },
+  {
+    name: "ACTH (Adrenocorticotropic Hormone)",
+    category: "Thyroid & Hormones",
+    price: 700,
+  },
+  {
+    name: "AMH (Anti Mullerian Hormone)",
+    category: "Thyroid & Hormones",
+    price: 1900,
+  },
+  { name: "Beta HCG", category: "Thyroid & Hormones", price: 600 },
+  { name: "Cortisol", category: "Thyroid & Hormones", price: 1000 },
+  { name: "Cortisol Morning", category: "Thyroid & Hormones", price: 1000 },
+  { name: "Cortisol Evening", category: "Thyroid & Hormones", price: 1000 },
+  { name: "C-Peptide Fasting", category: "Thyroid & Hormones", price: 3000 },
+  { name: "C-Peptide PP", category: "Thyroid & Hormones", price: 2000 },
+  { name: "DHEAS", category: "Thyroid & Hormones", price: 1000 },
+  {
+    name: "FSH (Follicle Stimulating Hormone)",
+    category: "Thyroid & Hormones",
+    price: 450,
+  },
+  { name: "Growth Hormone", category: "Thyroid & Hormones", price: 900 },
+  {
+    name: "LH (Luteinizing Hormone)",
+    category: "Thyroid & Hormones",
+    price: 450,
+  },
+  { name: "LH + FSH", category: "Thyroid & Hormones", price: 900 },
+  { name: "LH + FSH + Prolactin", category: "Thyroid & Hormones", price: 1350 },
   // Urine & Stool
   { name: "Urine Routine & Microscopy", category: "Urine & Stool", price: 80 },
   {
@@ -110,7 +234,22 @@ const TEST_CATALOGUE = [
     price: 350,
   },
   { name: "Stool Routine", category: "Urine & Stool", price: 80 },
-  // Imaging
+  // Vitamins & Minerals
+  { name: "Calcium (Serum)", category: "Vitamins & Minerals", price: 250 },
+  {
+    name: "Calcium Creatinine Ratio",
+    category: "Vitamins & Minerals",
+    price: 400,
+  },
+  { name: "Vitamin D (25-OH)", category: "Vitamins & Minerals", price: 700 },
+  { name: "Vitamin B12", category: "Vitamins & Minerals", price: 600 },
+  { name: "Iron (Serum)", category: "Vitamins & Minerals", price: 200 },
+  { name: "PSA (Prostate)", category: "Vitamins & Minerals", price: 500 },
+  { name: "Ferritin", category: "Vitamins & Minerals", price: 750 },
+  { name: "Folic Acid", category: "Vitamins & Minerals", price: 900 },
+  { name: "Copper (Serum)", category: "Vitamins & Minerals", price: 1200 },
+  { name: "Ceruloplasmin", category: "Vitamins & Minerals", price: 1200 },
+  // Radiology
   { name: "X-Ray Chest (PA View)", category: "Radiology", price: 200 },
   { name: "X-Ray Any Part", category: "Radiology", price: 150 },
   { name: "Ultrasound Whole Abdomen", category: "Radiology", price: 600 },
@@ -118,47 +257,176 @@ const TEST_CATALOGUE = [
   { name: "Ultrasound Upper Abdomen", category: "Radiology", price: 400 },
   // Infection & Serology
   { name: "Widal Test", category: "Infection & Serology", price: 120 },
-  { name: "Dengue NS1 Antigen", category: "Infection & Serology", price: 450 },
+  { name: "Dengue NS1 Antigen", category: "Infection & Serology", price: 1000 },
+  { name: "Dengue NS1", category: "Infection & Serology", price: 1000 },
   { name: "Dengue IgM / IgG", category: "Infection & Serology", price: 450 },
+  {
+    name: "Dengue by ELISA (IgG+IgM)",
+    category: "Infection & Serology",
+    price: 1000,
+  },
+  {
+    name: "Dengue by ELISA (IgG/IgM)(Each)",
+    category: "Infection & Serology",
+    price: 1500,
+  },
   {
     name: "Malaria Antigen (Rapid)",
     category: "Infection & Serology",
     price: 180,
   },
-  { name: "HBsAg (Hepatitis B)", category: "Infection & Serology", price: 200 },
+  {
+    name: "MP (Malaria Parasite)",
+    category: "Infection & Serology",
+    price: 120,
+  },
+  { name: "HBsAg (Hepatitis B)", category: "Infection & Serology", price: 250 },
+  {
+    name: "HBsAg (Hepatitis B Surface Antigen)",
+    category: "Infection & Serology",
+    price: 250,
+  },
   {
     name: "Anti-HCV (Hepatitis C)",
     category: "Infection & Serology",
-    price: 300,
+    price: 500,
   },
-  { name: "HIV I & II", category: "Infection & Serology", price: 250 },
+  { name: "HIV I & II", category: "Infection & Serology", price: 500 },
+  { name: "HIV 1 & 2", category: "Infection & Serology", price: 500 },
   {
     name: "CRP (C-Reactive Protein)",
     category: "Infection & Serology",
-    price: 200,
+    price: 300,
   },
   {
     name: "RA Factor (Rheumatoid)",
     category: "Infection & Serology",
     price: 180,
   },
-  // Vitamins & Hormones
-  { name: "Vitamin D (25-OH)", category: "Vitamins & Hormones", price: 700 },
-  { name: "Vitamin B12", category: "Vitamins & Hormones", price: 600 },
-  { name: "Iron (Serum)", category: "Vitamins & Hormones", price: 200 },
-  { name: "Calcium (Serum)", category: "Vitamins & Hormones", price: 120 },
-  { name: "PSA (Prostate)", category: "Vitamins & Hormones", price: 500 },
+  { name: "AFB by ZN Stain", category: "Infection & Serology", price: 200 },
+  {
+    name: "ASO Titre (Anti Streptolysin O)",
+    category: "Infection & Serology",
+    price: 300,
+  },
+  { name: "Blood Culture", category: "Infection & Serology", price: 1200 },
+  {
+    name: "BACTEC Blood Culture",
+    category: "Infection & Serology",
+    price: 1000,
+  },
+  {
+    name: "Covid-19 IgG Antibody",
+    category: "Infection & Serology",
+    price: 1000,
+  },
+  { name: "Covid-19 RT-PCR", category: "Infection & Serology", price: 1000 },
+  { name: "Chikungunya IgG", category: "Infection & Serology", price: 750 },
+  { name: "Chikungunya IgM", category: "Infection & Serology", price: 750 },
+  {
+    name: "Culture Vaginal Swab",
+    category: "Infection & Serology",
+    price: 600,
+  },
+  { name: "Culture Swab", category: "Infection & Serology", price: 1100 },
+  { name: "Culture Stool", category: "Infection & Serology", price: 300 },
+  { name: "Culture Semen", category: "Infection & Serology", price: 1100 },
+  { name: "Culture Pus", category: "Infection & Serology", price: 600 },
+  { name: "Culture Sputum", category: "Infection & Serology", price: 500 },
+  { name: "Culture Urine", category: "Infection & Serology", price: 300 },
+  { name: "HAV IgG/IgM", category: "Infection & Serology", price: 1500 },
+  { name: "HEV IgG/IgM", category: "Infection & Serology", price: 1500 },
+  { name: "HBV DNA", category: "Infection & Serology", price: 8000 },
+  {
+    name: "Mantoux Test (PPD 5TU & 10TU)",
+    category: "Infection & Serology",
+    price: 150,
+  },
+  // Immunology & Autoimmune
+  {
+    name: "AFP (Alpha Feto Protein)",
+    category: "Immunology & Autoimmune",
+    price: 700,
+  },
+  { name: "ANA Profile", category: "Immunology & Autoimmune", price: 500 },
+  { name: "ANA HEP-2", category: "Immunology & Autoimmune", price: 1200 },
+  {
+    name: "Anti-CCP (CCP Antibody)",
+    category: "Immunology & Autoimmune",
+    price: 1500,
+  },
+  { name: "Allergy Profile", category: "Immunology & Autoimmune", price: 2500 },
+  {
+    name: "Beta-2 Glycoprotein IgG",
+    category: "Immunology & Autoimmune",
+    price: 1000,
+  },
+  {
+    name: "Beta-2 Glycoprotein IgM",
+    category: "Immunology & Autoimmune",
+    price: 1000,
+  },
+  {
+    name: "Beta-2 Glycoprotein IgA",
+    category: "Immunology & Autoimmune",
+    price: 1000,
+  },
+  {
+    name: "CEA (Carcinoembryonic Antigen)",
+    category: "Immunology & Autoimmune",
+    price: 1350,
+  },
+  { name: "CA-125", category: "Immunology & Autoimmune", price: 1200 },
+  { name: "CA 19-9", category: "Immunology & Autoimmune", price: 1200 },
+  { name: "CA 15-3", category: "Immunology & Autoimmune", price: 2000 },
+  { name: "CA 72-4", category: "Immunology & Autoimmune", price: 1600 },
+  {
+    name: "Cardiolipin Antibody IgG/IgM/IgA",
+    category: "Immunology & Autoimmune",
+    price: 3000,
+  },
+  { name: "CD3+CD4+CD8", category: "Immunology & Autoimmune", price: 1800 },
+  {
+    name: "ENA Profile (Extractable Nuclear Antigen)",
+    category: "Immunology & Autoimmune",
+    price: 4000,
+  },
+  {
+    name: "IgE (Immunoglobulin E)",
+    category: "Immunology & Autoimmune",
+    price: 600,
+  },
+  // Genetics & Biopsy
+  { name: "Beta Thalassemia", category: "Genetics & Biopsy", price: 7000 },
+  { name: "Biopsy Small", category: "Genetics & Biopsy", price: 700 },
+  { name: "Biopsy Medium", category: "Genetics & Biopsy", price: 1000 },
+  { name: "Biopsy Large", category: "Genetics & Biopsy", price: 1500 },
+  {
+    name: "Chromosome Analysis Single",
+    category: "Genetics & Biopsy",
+    price: 3200,
+  },
+  {
+    name: "FNAC (From Superficial Organ)",
+    category: "Genetics & Biopsy",
+    price: 1500,
+  },
+  { name: "FNAC", category: "Genetics & Biopsy", price: 500 },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Blood Test": "bg-red-50 text-red-700 border-red-200",
   "Liver & Kidney": "bg-amber-50 text-amber-700 border-amber-200",
   "Lipid & Heart": "bg-pink-50 text-pink-700 border-pink-200",
+  "Thyroid & Hormones": "bg-purple-50 text-purple-700 border-purple-200",
   Thyroid: "bg-purple-50 text-purple-700 border-purple-200",
   "Urine & Stool": "bg-green-50 text-green-700 border-green-200",
   Radiology: "bg-blue-50 text-blue-700 border-blue-200",
   "Infection & Serology": "bg-orange-50 text-orange-700 border-orange-200",
+  "Vitamins & Minerals": "bg-teal-50 text-teal-700 border-teal-200",
   "Vitamins & Hormones": "bg-teal-50 text-teal-700 border-teal-200",
+  "Immunology & Autoimmune": "bg-indigo-50 text-indigo-700 border-indigo-200",
+  "Genetics & Biopsy": "bg-slate-50 text-slate-700 border-slate-200",
 };
 
 function TestSearchTab() {
@@ -217,10 +485,10 @@ function TestSearchTab() {
         ) : (
           filtered.map((test, idx) => (
             <motion.div
-              key={test.name}
+              key={`${test.name}-${idx}`}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.02 }}
+              transition={{ delay: idx * 0.01 }}
               className="flex items-center justify-between gap-3 bg-white rounded-lg border border-kdc-blue/10 px-4 py-3 hover:border-kdc-blue/30 transition-colors"
               data-ocid={`test_search.item.${idx + 1}`}
             >
@@ -476,6 +744,187 @@ function MyAppointmentsTab() {
   );
 }
 
+function AdminAppointmentsTab() {
+  const [filterQuery, setFilterQuery] = useState("");
+  const { data: isAdmin, isLoading: isCheckingAdmin } = useIsCallerAdmin();
+  const { data: appointments, isFetching } = useGetAllAppointments(!!isAdmin);
+  const { isPending: isDeleting } = useDeleteAppointment();
+
+  const filtered = (appointments ?? []).filter(
+    (a: Appointment) =>
+      a.patientName.toLowerCase().includes(filterQuery.toLowerCase()) ||
+      a.phone.includes(filterQuery),
+  );
+
+  if (isCheckingAdmin) {
+    return (
+      <div
+        className="flex items-center justify-center py-16"
+        data-ocid="admin.loading_state"
+      >
+        <Loader2 className="w-6 h-6 animate-spin text-kdc-blue mr-2" />
+        <span className="text-muted-foreground">Checking access...</span>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="text-center py-16" data-ocid="admin.error_state">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-7 h-7 text-red-500" />
+        </div>
+        <p className="font-semibold text-kdc-navy text-lg">
+          Admin Access Required
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          You must be an admin to view all appointments.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5" data-ocid="admin.panel">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-kdc-blue/10 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-kdc-blue" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-kdc-navy">
+              All Appointments
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Total:{" "}
+              <span className="font-semibold text-kdc-navy">
+                {appointments?.length ?? 0}
+              </span>
+            </p>
+          </div>
+        </div>
+        {isFetching && (
+          <Loader2
+            className="w-5 h-5 animate-spin text-kdc-blue"
+            data-ocid="admin.loading_state"
+          />
+        )}
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Filter by name or phone..."
+          value={filterQuery}
+          onChange={(e) => setFilterQuery(e.target.value)}
+          className="pl-10"
+          data-ocid="admin.search_input"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-12" data-ocid="admin.empty_state">
+          <div className="w-14 h-14 rounded-full bg-kdc-blue/10 flex items-center justify-center mx-auto mb-4">
+            <ClipboardList className="w-7 h-7 text-kdc-blue/50" />
+          </div>
+          <p className="font-semibold text-kdc-navy">No appointments found</p>
+          {filterQuery && (
+            <p className="text-sm text-muted-foreground mt-1">
+              No results for &ldquo;{filterQuery}&rdquo;
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+          {filtered.map((appt: Appointment, i: number) => {
+            const bookingDate = new Date(Number(appt.bookingTime) / 1_000_000);
+            return (
+              <motion.div
+                key={`${appt.phone}-${appt.patientName}-${appt.bookingTime.toString()}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+                className="bg-white rounded-xl border border-kdc-blue/15 p-4 shadow-sm"
+                data-ocid={`admin.item.${i + 1}`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-kdc-teal/10 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-kdc-teal" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-kdc-navy text-sm">
+                        {appt.patientName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {appt.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground bg-kdc-light rounded-full px-3 py-1">
+                      {bookingDate.toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                      onClick={() => {
+                        toast.info(
+                          "Delete requires appointment ID. Please use the backend console.",
+                        );
+                      }}
+                      disabled={isDeleting}
+                      title="Delete not available without appointment ID"
+                      data-ocid={`admin.delete_button.${i + 1}`}
+                    >
+                      <ClipboardList className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">Service</p>
+                    <p className="font-medium text-kdc-navy">
+                      {appt.serviceType}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Preferred Date</p>
+                    <p className="font-medium text-kdc-navy">
+                      {appt.preferredDate}
+                    </p>
+                  </div>
+                  {appt.email && (
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium text-kdc-navy truncate">
+                        {appt.email}
+                      </p>
+                    </div>
+                  )}
+                  {appt.message && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Message</p>
+                      <p className="font-medium text-kdc-navy">
+                        {appt.message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type FormState = {
   patientName: string;
   phone: string;
@@ -581,7 +1030,7 @@ export default function BookAppointmentSection() {
         <div className="max-w-2xl mx-auto">
           <Tabs defaultValue="book" className="w-full">
             <TabsList
-              className="grid w-full grid-cols-3 mb-8"
+              className="grid w-full grid-cols-4 mb-8"
               data-ocid="appointment.tab"
             >
               <TabsTrigger value="book" data-ocid="appointment.tab">
@@ -592,6 +1041,9 @@ export default function BookAppointmentSection() {
               </TabsTrigger>
               <TabsTrigger value="history" data-ocid="appointment.tab">
                 My Appointments
+              </TabsTrigger>
+              <TabsTrigger value="admin" data-ocid="appointment.tab">
+                Admin View
               </TabsTrigger>
             </TabsList>
 
@@ -770,6 +1222,12 @@ export default function BookAppointmentSection() {
             <TabsContent value="history">
               <div className="bg-card rounded-2xl p-8 shadow-card">
                 <MyAppointmentsTab />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="admin">
+              <div className="bg-card rounded-2xl p-8 shadow-card">
+                <AdminAppointmentsTab />
               </div>
             </TabsContent>
           </Tabs>
