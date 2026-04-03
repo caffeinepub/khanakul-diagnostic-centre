@@ -141,12 +141,28 @@ actor {
       .toArray();
   };
 
-  // Admin only: Get all appointments
+  // Admin only: Get all appointments (principal-based)
   public query ({ caller }) func getAllAppointments() : async [Appointment] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view appointments");
     };
     appointments.values().toArray();
+  };
+
+  // Password-protected: Get all appointments with admin password
+  public type AdminAppointmentResult = {
+    #ok : [AppointmentWithId];
+    #err : Text;
+  };
+
+  public query func getAllAppointmentsByAdminPassword(password : Text) : async AdminAppointmentResult {
+    if (password != "GTA@8818") {
+      return #err("Invalid admin password");
+    };
+    let result = appointments.entries()
+      .map(func((id, a) : (AppointmentId, Appointment)) : AppointmentWithId { { id = id; appointment = a } })
+      .toArray();
+    #ok(result);
   };
 
   // Admin only: Update contact info

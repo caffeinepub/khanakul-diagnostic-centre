@@ -99,6 +99,27 @@ export function useGetAllAppointments(enabled: boolean) {
   });
 }
 
+export function useGetAllAppointmentsByPassword(
+  password: string,
+  enabled: boolean,
+) {
+  const { actor, isFetching } = useActor();
+  return useQuery<AppointmentWithId[]>({
+    queryKey: ["allAppointmentsByPassword", password],
+    queryFn: async () => {
+      if (!actor || !password) return [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (actor as any).getAllAppointmentsByAdminPassword(
+        password,
+      );
+      if (result && "ok" in result) return result.ok as AppointmentWithId[];
+      throw new Error(result?.err ?? "Invalid password");
+    },
+    enabled: !!actor && !isFetching && enabled && password.length > 0,
+    retry: false,
+  });
+}
+
 export function useDeleteAppointment() {
   const { actor } = useActor();
   const queryClient = useQueryClient();

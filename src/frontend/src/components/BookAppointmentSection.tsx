@@ -25,16 +25,15 @@ import {
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { Appointment, AppointmentWithId } from "../backend.d";
 import {
   useBookAppointment,
   useDeleteAppointment,
-  useGetAllAppointments,
+  useGetAllAppointmentsByPassword,
   useGetAppointmentsByPhone,
   useGetServices,
-  useIsCallerAdmin,
 } from "../hooks/useQueries";
 
 const WHATSAPP_NUMBERS = [
@@ -107,6 +106,29 @@ const TEST_CATALOGUE = [
   { name: "GTT (Glucose Tolerance Test)", category: "Blood Test", price: 150 },
   { name: "HPLC", category: "Blood Test", price: 800 },
   { name: "Lactate", category: "Blood Test", price: 1000 },
+  { name: "PT with INR", category: "Blood Test", price: 400 },
+  { name: "Potassium", category: "Blood Test", price: 200 },
+  { name: "PCV (Packed Cell Volume)", category: "Blood Test", price: 50 },
+  { name: "Platelet Count", category: "Blood Test", price: 50 },
+  { name: "PCV, Platelet Count", category: "Blood Test", price: 100 },
+  { name: "Reticulocyte Count", category: "Blood Test", price: 200 },
+  { name: "RBS (Random Blood Sugar)", category: "Blood Test", price: 50 },
+  { name: "Sodium (Na+)", category: "Blood Test", price: 200 },
+  {
+    name: "Sugar (Fasting/PP/Random)(Each)",
+    category: "Blood Test",
+    price: 50,
+  },
+  { name: "TC / DC", category: "Blood Test", price: 50 },
+  { name: "TC, DC, HB%", category: "Blood Test", price: 100 },
+  { name: "TC, DC, HB%, ESR", category: "Blood Test", price: 120 },
+  { name: "TC, DC, MP, ESR", category: "Blood Test", price: 220 },
+  { name: "TC, DC, HB%, ESR, MP", category: "Blood Test", price: 270 },
+  { name: "TC, DC, HB%, MP", category: "Blood Test", price: 220 },
+  { name: "TC, DC, MP", category: "Blood Test", price: 220 },
+  { name: "TC, DC, Platelet", category: "Blood Test", price: 150 },
+  { name: "Thrombin Time", category: "Blood Test", price: 800 },
+  { name: "Semen Analysis", category: "Blood Test", price: 300 },
   // Liver & Kidney
   { name: "Liver Function Test (LFT)", category: "Liver & Kidney", price: 500 },
   {
@@ -119,8 +141,8 @@ const TEST_CATALOGUE = [
   { name: "Blood Urea", category: "Liver & Kidney", price: 100 },
   { name: "BUN (Blood Urea Nitrogen)", category: "Liver & Kidney", price: 200 },
   { name: "BUN Creatinine Ratio", category: "Liver & Kidney", price: 300 },
-  { name: "SGOT (AST)", category: "Liver & Kidney", price: 120 },
-  { name: "SGPT (ALT)", category: "Liver & Kidney", price: 120 },
+  { name: "SGOT (AST)", category: "Liver & Kidney", price: 150 },
+  { name: "SGPT (ALT)", category: "Liver & Kidney", price: 150 },
   {
     name: "Bilirubin (Total + Direct)",
     category: "Liver & Kidney",
@@ -158,11 +180,20 @@ const TEST_CATALOGUE = [
     category: "Liver & Kidney",
     price: 1500,
   },
+  { name: "Protein Electrophoresis", category: "Liver & Kidney", price: 1200 },
+  { name: "Uric Acid", category: "Liver & Kidney", price: 150 },
+  { name: "Urea", category: "Liver & Kidney", price: 150 },
+  {
+    name: "TIBC (Total Iron Binding Capacity)",
+    category: "Liver & Kidney",
+    price: 1500,
+  },
   // Lipid & Heart
   { name: "Lipid Profile", category: "Lipid & Heart", price: 500 },
   { name: "Lipid Profile (LP)", category: "Lipid & Heart", price: 500 },
   { name: "Cholesterol (Total)", category: "Lipid & Heart", price: 150 },
   { name: "Triglycerides", category: "Lipid & Heart", price: 120 },
+  { name: "Triglyceride (TG)", category: "Lipid & Heart", price: 150 },
   { name: "HDL Cholesterol", category: "Lipid & Heart", price: 150 },
   { name: "LDL Cholesterol", category: "Lipid & Heart", price: 150 },
   {
@@ -173,6 +204,7 @@ const TEST_CATALOGUE = [
   { name: "CPK MB", category: "Lipid & Heart", price: 450 },
   { name: "ECG", category: "Lipid & Heart", price: 200 },
   { name: "Lipoprotein", category: "Lipid & Heart", price: 600 },
+  { name: "VLDL", category: "Lipid & Heart", price: 150 },
   // Thyroid & Hormones
   {
     name: "TSH (Thyroid Stimulating Hormone)",
@@ -226,6 +258,27 @@ const TEST_CATALOGUE = [
   },
   { name: "LH + FSH", category: "Thyroid & Hormones", price: 900 },
   { name: "LH + FSH + Prolactin", category: "Thyroid & Hormones", price: 1350 },
+  {
+    name: "PSA (Prostate Specific Antigen)",
+    category: "Thyroid & Hormones",
+    price: 550,
+  },
+  { name: "Prolactin", category: "Thyroid & Hormones", price: 450 },
+  { name: "TSH", category: "Thyroid & Hormones", price: 300 },
+  { name: "T3, TSH or T4, TSH", category: "Thyroid & Hormones", price: 550 },
+  { name: "FT3, FT4, TSH", category: "Thyroid & Hormones", price: 900 },
+  { name: "FT3, TSH or FT4, TSH", category: "Thyroid & Hormones", price: 700 },
+  { name: "Testosterone", category: "Thyroid & Hormones", price: 750 },
+  {
+    name: "PTH (Parathyroid Hormone)",
+    category: "Thyroid & Hormones",
+    price: 1800,
+  },
+  {
+    name: "Quadruple Marker (2nd Trimester)",
+    category: "Thyroid & Hormones",
+    price: 2500,
+  },
   // Urine & Stool
   { name: "Urine Routine & Microscopy", category: "Urine & Stool", price: 80 },
   {
@@ -234,6 +287,15 @@ const TEST_CATALOGUE = [
     price: 350,
   },
   { name: "Stool Routine", category: "Urine & Stool", price: 80 },
+  { name: "Osmolality Urine", category: "Urine & Stool", price: 400 },
+  { name: "Urine OBT", category: "Urine & Stool", price: 100 },
+  { name: "Urine RE + CS", category: "Urine & Stool", price: 350 },
+  { name: "Urine for Ketone Body", category: "Urine & Stool", price: 200 },
+  { name: "Stool RE", category: "Urine & Stool", price: 100 },
+  { name: "Stool OBT", category: "Urine & Stool", price: 150 },
+  { name: "Stool RE + OBT", category: "Urine & Stool", price: 250 },
+  { name: "Stool OPC", category: "Urine & Stool", price: 150 },
+  { name: "Urine RE", category: "Urine & Stool", price: 50 },
   // Vitamins & Minerals
   { name: "Calcium (Serum)", category: "Vitamins & Minerals", price: 250 },
   {
@@ -249,6 +311,16 @@ const TEST_CATALOGUE = [
   { name: "Folic Acid", category: "Vitamins & Minerals", price: 900 },
   { name: "Copper (Serum)", category: "Vitamins & Minerals", price: 1200 },
   { name: "Ceruloplasmin", category: "Vitamins & Minerals", price: 1200 },
+  { name: "Vitamin A", category: "Vitamins & Minerals", price: 3200 },
+  { name: "Vitamin B12", category: "Vitamins & Minerals", price: 1200 },
+  { name: "Vitamin D (25 OH)", category: "Vitamins & Minerals", price: 1200 },
+  { name: "Vitamin D3 (125 OH)", category: "Vitamins & Minerals", price: 3200 },
+  {
+    name: "Vitamin E (Tocopherol)",
+    category: "Vitamins & Minerals",
+    price: 2500,
+  },
+  { name: "Thyroglobulin", category: "Vitamins & Minerals", price: 4500 },
   // Radiology
   { name: "X-Ray Chest (PA View)", category: "Radiology", price: 200 },
   { name: "X-Ray Any Part", category: "Radiology", price: 150 },
@@ -342,6 +414,26 @@ const TEST_CATALOGUE = [
     category: "Infection & Serology",
     price: 150,
   },
+  {
+    name: "MPDA (Malaria Parasite Dual Antigen)",
+    category: "Infection & Serology",
+    price: 350,
+  },
+  {
+    name: "PBS (Peripheral Blood Smear)",
+    category: "Infection & Serology",
+    price: 100,
+  },
+  { name: "Widal Test", category: "Infection & Serology", price: 150 },
+  { name: "VDRL", category: "Infection & Serology", price: 150 },
+  { name: "RA Factor", category: "Infection & Serology", price: 300 },
+  {
+    name: "Rubella IgG/IgM (Each)",
+    category: "Infection & Serology",
+    price: 1450,
+  },
+  { name: "TORCH Profile", category: "Infection & Serology", price: 2500 },
+  { name: "Sputum for AFB", category: "Infection & Serology", price: 150 },
   // Immunology & Autoimmune
   {
     name: "AFP (Alpha Feto Protein)",
@@ -746,40 +838,94 @@ function MyAppointmentsTab() {
 
 function AdminAppointmentsTab() {
   const [filterQuery, setFilterQuery] = useState("");
-  const { data: isAdmin, isLoading: isCheckingAdmin } = useIsCallerAdmin();
-  const { data: appointments, isFetching } = useGetAllAppointments(!!isAdmin);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [submittedPassword, setSubmittedPassword] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
   const { isPending: isDeleting } = useDeleteAppointment();
 
-  const filtered = (appointments ?? []).filter(
-    (a: Appointment) =>
-      a.patientName.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      a.phone.includes(filterQuery),
+  const {
+    data: appointments,
+    isFetching,
+    isError,
+  } = useGetAllAppointmentsByPassword(
+    submittedPassword,
+    unlocked && submittedPassword.length > 0,
   );
 
-  if (isCheckingAdmin) {
+  // Handle wrong password: use useEffect to avoid setting state during render
+  useEffect(() => {
+    if (isError && unlocked) {
+      setUnlocked(false);
+      setSubmittedPassword("");
+      setAdminPassword("");
+      toast.error("Incorrect password. Please try again.");
+    }
+  }, [isError, unlocked]);
+
+  const filtered = (appointments ?? []).filter(
+    (a: AppointmentWithId) =>
+      a.appointment.patientName
+        .toLowerCase()
+        .includes(filterQuery.toLowerCase()) ||
+      a.appointment.phone.includes(filterQuery),
+  );
+
+  if (!unlocked) {
     return (
       <div
-        className="flex items-center justify-center py-16"
-        data-ocid="admin.loading_state"
+        className="flex items-center justify-center py-8"
+        data-ocid="admin.panel"
       >
-        <Loader2 className="w-6 h-6 animate-spin text-kdc-blue mr-2" />
-        <span className="text-muted-foreground">Checking access...</span>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="text-center py-16" data-ocid="admin.error_state">
-        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-7 h-7 text-red-500" />
+        <div className="w-full max-w-sm bg-white rounded-2xl border border-kdc-blue/20 shadow-md p-8 text-center space-y-5">
+          <div className="w-14 h-14 rounded-full bg-kdc-blue/10 flex items-center justify-center mx-auto">
+            <Lock className="w-7 h-7 text-kdc-blue" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-kdc-navy">Admin Access</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter the admin password to view all appointments.
+            </p>
+          </div>
+          <div className="space-y-2 text-left">
+            <Label
+              htmlFor="admin-password"
+              className="text-kdc-navy font-medium"
+            >
+              Password
+            </Label>
+            <Input
+              id="admin-password"
+              type="password"
+              placeholder="Enter admin password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && adminPassword.length > 0) {
+                  setSubmittedPassword(adminPassword);
+                  setUnlocked(true);
+                }
+              }}
+              className="border-kdc-blue/30 focus:border-kdc-blue"
+              data-ocid="admin.input"
+            />
+          </div>
+          <Button
+            className="w-full bg-kdc-blue hover:bg-kdc-blue/90 text-white font-semibold"
+            disabled={adminPassword.length === 0 || isFetching}
+            onClick={() => {
+              setSubmittedPassword(adminPassword);
+              setUnlocked(true);
+            }}
+            data-ocid="admin.primary_button"
+          >
+            {isFetching ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Shield className="w-4 h-4 mr-2" />
+            )}
+            Unlock
+          </Button>
         </div>
-        <p className="font-semibold text-kdc-navy text-lg">
-          Admin Access Required
-        </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          You must be an admin to view all appointments.
-        </p>
       </div>
     );
   }
@@ -803,12 +949,29 @@ function AdminAppointmentsTab() {
             </p>
           </div>
         </div>
-        {isFetching && (
-          <Loader2
-            className="w-5 h-5 animate-spin text-kdc-blue"
-            data-ocid="admin.loading_state"
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {isFetching && (
+            <Loader2
+              className="w-5 h-5 animate-spin text-kdc-blue"
+              data-ocid="admin.loading_state"
+            />
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+            onClick={() => {
+              setUnlocked(false);
+              setSubmittedPassword("");
+              setAdminPassword("");
+              setFilterQuery("");
+            }}
+            data-ocid="admin.secondary_button"
+          >
+            <Lock className="w-3.5 h-3.5 mr-1.5" />
+            Lock
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -836,11 +999,12 @@ function AdminAppointmentsTab() {
         </div>
       ) : (
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-          {filtered.map((appt: Appointment, i: number) => {
+          {filtered.map((item: AppointmentWithId, i: number) => {
+            const appt = item.appointment;
             const bookingDate = new Date(Number(appt.bookingTime) / 1_000_000);
             return (
               <motion.div
-                key={`${appt.phone}-${appt.patientName}-${appt.bookingTime.toString()}`}
+                key={`${item.id.toString()}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.02 }}
