@@ -1,3 +1,14 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +33,7 @@ import {
   Phone,
   Search,
   Shield,
+  Trash2,
   User,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -660,7 +672,10 @@ function WhatsAppButtons({
   );
 }
 
-function AppointmentCard({ item }: { item: AppointmentWithId }) {
+function AppointmentCard({
+  item,
+  onDelete,
+}: { item: AppointmentWithId; onDelete: (id: bigint) => void }) {
   const bookingDate = new Date(
     Number(item.appointment.bookingTime) / 1_000_000,
   );
@@ -734,8 +749,38 @@ function AppointmentCard({ item }: { item: AppointmentWithId }) {
         )}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-kdc-blue/10">
+      <div className="mt-4 pt-3 border-t border-kdc-blue/10 space-y-3">
         <WhatsAppButtons details={details} ocidPrefix="history" />
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-400"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" />
+              Delete Appointment
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Appointment?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete your appointment (Booking ID: #
+                {item.id.toString()}). This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={() => onDelete(item.id)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
@@ -745,8 +790,24 @@ function MyAppointmentsTab() {
   const [searchPhone, setSearchPhone] = useState("");
   const [submittedPhone, setSubmittedPhone] = useState("");
 
-  const { data: appointments, isFetching } =
-    useGetAppointmentsByPhone(submittedPhone);
+  const {
+    data: appointments,
+    isFetching,
+    refetch,
+  } = useGetAppointmentsByPhone(submittedPhone);
+  const { mutate: deleteAppointment } = useDeleteAppointment();
+
+  function handleDelete(id: bigint) {
+    deleteAppointment(id, {
+      onSuccess: () => {
+        toast.success("Appointment deleted successfully.");
+        refetch();
+      },
+      onError: () => {
+        toast.error("Failed to delete appointment. Please try again.");
+      },
+    });
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -812,7 +873,7 @@ function MyAppointmentsTab() {
             </p>
             {appointments.map((item, i) => (
               <div key={item.id.toString()} data-ocid={`history.item.${i + 1}`}>
-                <AppointmentCard item={item} />
+                <AppointmentCard item={item} onDelete={handleDelete} />
               </div>
             ))}
           </motion.div>
@@ -840,7 +901,8 @@ function AdminAppointmentsTab() {
   const [filterQuery, setFilterQuery] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [submittedPassword, setSubmittedPassword] = useState("");
-  const { isPending: isDeleting } = useDeleteAppointment();
+  const { mutate: deleteAppointment, isPending: isDeleting } =
+    useDeleteAppointment();
 
   const {
     data: appointments,
@@ -1029,21 +1091,41 @@ function AdminAppointmentsTab() {
                         year: "numeric",
                       })}
                     </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
-                      onClick={() => {
-                        toast.info(
-                          "Delete requires appointment ID. Please use the backend console.",
-                        );
-                      }}
-                      disabled={isDeleting}
-                      title="Delete not available without appointment ID"
-                      data-ocid={`admin.delete_button.${i + 1}`}
-                    >
-                      <ClipboardList className="w-3.5 h-3.5" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                          disabled={isDeleting}
+                          title="Delete appointment"
+                          data-ocid={`admin.delete_button.${i + 1}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Delete Appointment?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the appointment for{" "}
+                            <strong>{appt.patientName}</strong>. This action
+                            cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            onClick={() => deleteAppointment(item.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
